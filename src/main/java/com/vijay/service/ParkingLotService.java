@@ -2,78 +2,77 @@ package com.vijay.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.PriorityQueue;
 
 public class ParkingLotService {
 
     public static Integer id = 0;
     public static String lotSize = null;
-    public static HashMap<String, String[]> slotsAllocated = new HashMap<>();
-    public static HashMap<String, ArrayList<String>> colorToRegNo = new HashMap<>();
-    public static HashMap<String, ArrayList<String>> colorToSlot = new HashMap<>();
-    public static HashMap<String, String> regNoToSlot = new HashMap<>();
-    public static PriorityQueue<Integer> availableSlot = new PriorityQueue<>();
+    public static HashMap<String, String[]> slotsAllocated = null;
+    public static HashMap<String, ArrayList<String>> colorToRegNo = null;
+    public static HashMap<String, ArrayList<String>> colorToSlot = null;
+    public static HashMap<String, String> regNoToSlot = null;
+    public static PriorityQueue<Integer> availableSlot = null;
+    private static ParkingLotService parkingLotService = null;
 
-    /**
-     * Defining the parking slots
-     * @param lotsz
-     */
-    public void createParkingLot(String lotsz) {
-        lotSize = lotsz;
-        System.out.println("Created a parking lot with " + lotsz +" slots");
+    public static ParkingLotService getInstance() {
+        if (parkingLotService != null) {
+            return parkingLotService;
+        }
+        parkingLotService = new ParkingLotService();
+        return parkingLotService;
     }
 
     /**
-     * Parking the car to the available and the nearest to the entry
+     * Add to the parking lot and allocate the slot number
      * @param regNo
      * @param color
+     * @return int
      */
-    public static void park(String regNo, String color) {
+    public static int park(String regNo, String color) {
         Integer curr = id;
         if (!availableSlot.isEmpty()) {
             id = availableSlot.poll();
-            System.out.println("Allocated slot number: " + id.toString());
-        }
-        else if (id + 1 <= Integer.parseInt(lotSize)) {
+        } else if (id + 1 <= Integer.parseInt(lotSize)) {
             id++;
             curr = id;
-            System.out.println("Allocated slot number: " + id.toString());
-        }
-        else {
-            System.out.println("Sorry, parking lot is full");
-            return;
+        } else {
+            return -1;
         }
 
         String idd = id.toString();
         slotsAllocated.put(idd, new String[]{idd, regNo, color});
 
         if (!colorToRegNo.containsKey(color)) {
-            ArrayList <String> temp = new ArrayList<>();
+            ArrayList<String> temp = new ArrayList<>();
             temp.add(regNo);
             colorToRegNo.put(color, temp);
-        }
-        else {
+        } else {
             colorToRegNo.get(color).add(regNo);
         }
 
         if (!colorToSlot.containsKey(color)) {
-            ArrayList <String> temp = new ArrayList<>();
+            ArrayList<String> temp = new ArrayList<>();
             temp.add(id.toString());
             colorToSlot.put(color, temp);
-        }
-        else {
+        } else {
             colorToSlot.get(color).add(id.toString());
         }
 
         regNoToSlot.put(regNo, idd);
+        int temp = id;
         id = curr;
+
+        return temp;
     }
 
     /**
-     * Deallocate the slot by lotId
+     * from the given slot the car will remove
      * @param lotId
+     * @return int
      */
-    public static void leave(String lotId) {
+    public static int leave(String lotId) {
         if (!availableSlot.contains(Integer.parseInt(lotId))) {
             availableSlot.add(Integer.parseInt(lotId));
         }
@@ -87,86 +86,80 @@ public class ParkingLotService {
             colorToRegNo.get(color).remove(regNo);
             colorToSlot.get(color).remove(parkId);
             regNoToSlot.remove(regNo);
-            System.out.println("Slot number " + lotId + " is free");
+            return Integer.parseInt(lotId);
         }
-        else {
-            System.out.println("Slot is not allocated");
-        }
+        return -1;
     }
 
     /**
-     * Fetch the status of the parking slot
+     *  Status of the allocation lot
+     * @return List<String[]>
      */
-    public static void status() {
+    public static List<String[]> status() {
+        List<String[]> list = new ArrayList<>();
         if (id > 0) {
-            System.out.println("Slot No." + "\t" + "Registration No" + "\t\t" + "Color");
             for (Integer i = 1; i <= id; i++) {
                 if (slotsAllocated.containsKey(i.toString())) {
                     String[] detail = slotsAllocated.get(i.toString());
-                        System.out.println(detail[0] + "\t\t" + detail[1] + "\t\t" + detail[2]);
+                    list.add(detail);
                 }
             }
         }
-        else {
-            System.out.println("No slot is allocated");
-        }
+        return list;
     }
 
     /**
-     * Fetch the registration number from the color
+     * Fetch the registration number from the given color
      * @param color
+     * @return List<String>
      */
-    public static void getRegistrationNumbersFromColor(String color) {
+    public static List<String> getRegistrationNumbersFromColor(String color) {
+        List<String> regNo = null;
         if (colorToRegNo.containsKey(color)) {
-            ArrayList <String> regNo = colorToRegNo.get(color);
-            displayRegistrationNumber(regNo);
+            regNo = colorToRegNo.get(color);
         }
-        else {
-            System.out.println("Not found");
-        }
+
+        return regNo;
     }
 
     /**
-     * Fetch the slot number from the color
+     * Fetch the slot number from the given color
      * @param color
+     * @return List<String>
      */
-    public static void getSlotNumbersFromColor(String color) {
+    public static List<String> getSlotNumbersFromColor(String color) {
+        List<String> regNo = null;
         if (colorToSlot.containsKey(color)) {
-            ArrayList<String> regNo = colorToSlot.get(color);
-            displayRegistrationNumber(regNo);
+            regNo = colorToSlot.get(color);
         }
-        else {
-            System.out.println("Not found");
-        }
+        return regNo;
     }
 
     /**
      * Fetch the slot number from the registration number
      * @param regNo
+     * @return String
      */
-    public static void getSlotNumberFromRegNo(String regNo) {
+    public static String getSlotNumberFromRegNo(String regNo) {
+        String slot = null;
         if (regNoToSlot.containsKey(regNo)) {
-            String slot = regNoToSlot.get(regNo);
-            System.out.println(slot);
+            slot = regNoToSlot.get(regNo);
         }
-        else {
-            System.out.println("Not found");
-        }
+        return slot;
     }
 
     /**
-     * Display the registration number
-     * @param regNo
+     * Create the availability of the lots
+     * @param lotsz
+     * @return
      */
-    public static  void displayRegistrationNumber(ArrayList<String> regNo) {
-        int sz = regNo.size();
-
-        for (int i = 0; i < sz; i++) {
-            System.out.print(regNo.get(i));
-            if (i != sz-1) {
-                System.out.print(", ");
-            }
-        }
-        System.out.println();
+    public String createParkingLot(String lotsz) {
+        lotSize = lotsz;
+        slotsAllocated = new HashMap<>();
+        colorToRegNo = new HashMap<>();
+        colorToSlot = new HashMap<>();
+        regNoToSlot = new HashMap<>();
+        availableSlot = new PriorityQueue<>();
+        return lotSize;
     }
 }
